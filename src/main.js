@@ -4,6 +4,7 @@ import {code} from 'telegraf/format';
 import config from 'config';
 import {ogg} from './ogg.js';
 import {openai} from './openai.js';
+import axios from 'axios';
 
 const INITIAL_SESSION = {messages: []};
 const bot = new Telegraf(config.get('BOT_TOKEN'));
@@ -43,16 +44,46 @@ bot.on(message('voice'), async (ctx) => {
 
     await ctx.reply(code(`Ваш запрос: ${text}`));
 
-    ctx.session.messages.push({role: openai.roles.USER, content: text});
+    // Запрос о погоде
+    if (text.startsWith('Какая погода в городе')) {
+      const city = text.replace('Какая погода в городе', '').trim();
+      const apiKey = '47c0aca1ff1640f7aef02432232805';
+      const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`;
 
-    const response = await openai.chat(ctx.session.messages);
+      // Выполнение запроса о погоде
+      const response = await axios.get(url);
+      const weatherData = response.data;
+      const temperature = weatherData.current.temp_c;
+      const weatherDescription = weatherData.current.condition.text;
 
-    ctx.session.messages.push({
-      role: openai.roles.ASSISTANT,
-      content: response.content,
-    });
+      const weatherResponse = `Скажи на русском по простому "Температура в ${city}: ${temperature}°C. ${weatherDescription}."`;
 
-    await ctx.reply(response.content);
+      //await ctx.reply(code(weatherResponse));
+
+      ctx.session.messages.push({
+        role: openai.roles.USER,
+        content: weatherResponse,
+      });
+      const w = await openai.chat(ctx.session.messages);
+
+      ctx.session.messages.push({
+        role: openai.roles.ASSISTANT,
+        content: w.content,
+      });
+
+      await ctx.reply(w.content);
+    } else {
+      ctx.session.messages.push({role: openai.roles.USER, content: text});
+
+      const response = await openai.chat(ctx.session.messages);
+
+      ctx.session.messages.push({
+        role: openai.roles.ASSISTANT,
+        content: response.content,
+      });
+
+      await ctx.reply(response.content);
+    }
   } catch (err) {
     console.log('Error while voice message > ', err.message);
   }
@@ -63,20 +94,52 @@ bot.on(message('text'), async (ctx) => {
   try {
     await ctx.reply(code('Обрабатываю ...'));
 
-    ctx.session.messages.push({
-      role: openai.roles.USER,
-      content: ctx.message.text,
-    });
+    const text = ctx.message.text;
 
-    const response = await openai.chat(ctx.session.messages);
+    // Запрос о погоде
+    if (text.startsWith('Какая погода в городе')) {
+      const city = text.replace('Какая погода в городе', '').trim();
+      const apiKey = '47c0aca1ff1640f7aef02432232805';
+      const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`;
 
-    ctx.session.messages.push({
-      role: openai.roles.ASSISTANT,
-      content: response.content,
-    });
+      // Выполнение запроса о погоде
+      const response = await axios.get(url);
+      const weatherData = response.data;
+      const temperature = weatherData.current.temp_c;
+      const weatherDescription = weatherData.current.condition.text;
 
-    await ctx.reply(response.content);
+      const weatherResponse = `Скажи на русском по простому "Температура в ${city}: ${temperature}°C. ${weatherDescription}."`;
+
+      //await ctx.reply(code(weatherResponse));
+
+      ctx.session.messages.push({
+        role: openai.roles.USER,
+        content: weatherResponse,
+      });
+      const w = await openai.chat(ctx.session.messages);
+
+      ctx.session.messages.push({
+        role: openai.roles.ASSISTANT,
+        content: w.content,
+      });
+
+      await ctx.reply(w.content);
+    } else {
+      ctx.session.messages.push({
+        role: openai.roles.USER,
+        content: ctx.message.text,
+      });
+
+      const response = await openai.chat(ctx.session.messages);
+
+      ctx.session.messages.push({
+        role: openai.roles.ASSISTANT,
+        content: response.content,
+      });
+
+      await ctx.reply(response.content);
+    }
   } catch (err) {
-    console.log('Error while voice message > ', err.message);
+    console.log('Error while text message > ', err.message);
   }
 });

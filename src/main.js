@@ -47,7 +47,7 @@ bot.on(message('voice'), async (ctx) => {
     // Запрос о погоде
     if (text.startsWith('Какая погода в городе')) {
       const city = text.replace('Какая погода в городе', '').trim();
-      const apiKey = '47c0aca1ff1640f7aef02432232805';
+      const apiKey = config.get('WEATHER_APIKEY');
       const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`;
 
       // Выполнение запроса о погоде
@@ -99,7 +99,7 @@ bot.on(message('text'), async (ctx) => {
     // Запрос о погоде
     if (text.startsWith('Какая погода в городе')) {
       const city = text.replace('Какая погода в городе', '').trim();
-      const apiKey = '47c0aca1ff1640f7aef02432232805';
+      const apiKey = config.get('WEATHER_APIKEY');
       const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`;
 
       // Выполнение запроса о погоде
